@@ -4,6 +4,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'username_input_cubit.freezed.dart';
 
+final usernameRegex = RegExp(r'^[A-Z]{1,}\s[A-Z]{1,}$');
+
 class UsernameInputCubit extends Cubit<UsernameForm> {
   UsernameInputCubit() : super(const UsernameForm());
 
@@ -36,7 +38,7 @@ class Username extends FormzInput<String, String> {
 
   @override
   String? validator(String value) {
-    if (!RegExp(r'^[A-Z]{1,}\s[A-Z]{1,}$').hasMatch(value)) return 'Incorrect name';
+    if (!usernameRegex.hasMatch(value)) return 'Incorrect name';
 
     return null;
   }

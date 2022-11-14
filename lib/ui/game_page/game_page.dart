@@ -47,24 +47,22 @@ class _GamePageState extends State<GamePage> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Stack(
-                      fit: StackFit.expand,
+                    child: Row(
                       children: [
-                        Center(
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: const [
-                              _OverallScores(),
-                              Positioned.fill(
-                                bottom: -96,
-                                child: _CurrentScores(),
-                              ),
-                            ],
+                        Expanded(
+                          child: _GameControls(
+                            overallScoreSelector: (value) => value.firstUserOverallScore,
+                            currentScoreSelector: (value) => value.firstUserCurrentScore,
+                            onBallTap: () => context.read<GameProgressCubit>().makeFirstUserTurn(),
                           ),
                         ),
-                        const Align(
-                          alignment: Alignment(0, 0.4),
-                          child: _BallButtons(),
+                        const Gap(32),
+                        Expanded(
+                          child: _GameControls(
+                            overallScoreSelector: (value) => value.secondUserOverallScore,
+                            currentScoreSelector: (value) => value.secondUserCurrentScore,
+                            onBallTap: () => context.read<GameProgressCubit>().makeSecondUserTurn(),
+                          ),
                         ),
                       ],
                     ),
@@ -72,9 +70,26 @@ class _GamePageState extends State<GamePage> {
                   if (!state) const GamePauseOverlay(),
                   Padding(
                     padding: const EdgeInsets.all(32) + const EdgeInsets.only(top: 48),
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: !state ? const _UsernameInputs() : const _UsernameTexts(),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _UsernameInteraction(
+                            isEditable: state,
+                            inputStateSelector: (state) => state.firstUserName,
+                            updateName: (text) => context.read<UsernameInputCubit>().updateFirstUserName(text),
+                            textStateSelector: (value) => value.firstUserName,
+                          ),
+                        ),
+                        const Gap(32),
+                        Expanded(
+                          child: _UsernameInteraction(
+                            isEditable: state,
+                            inputStateSelector: (state) => state.secondUserName,
+                            updateName: (text) => context.read<UsernameInputCubit>().updateSecondUserName(text),
+                            textStateSelector: (value) => value.secondUserName,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   if (!state) const Center(child: StartButton()),
@@ -99,134 +114,88 @@ class _GamePageState extends State<GamePage> {
       );
 }
 
-class _OverallScores extends StatelessWidget {
-  const _OverallScores();
+class _GameControls extends StatelessWidget {
+  final int Function(GamePlaying value) overallScoreSelector;
+  final String Function(GamePlaying value) currentScoreSelector;
+  final VoidCallback onBallTap;
+
+  const _GameControls({
+    required this.overallScoreSelector,
+    required this.currentScoreSelector,
+    required this.onBallTap,
+  });
 
   @override
-  Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          BlocSelector<GameProgressCubit, GameProgressState, int>(
-            selector: (state) => state.map(
-              inactive: (value) => 0,
-              playing: (value) => value.firstUserOverallScore,
+  Widget build(BuildContext context) => Center(
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            const SizedBox(
+              width: double.infinity,
+              height: 246,
             ),
-            builder: (context, state) => OverallScoreCounter(
-              score: state.toString(),
-            ),
-          ),
-          BlocSelector<GameProgressCubit, GameProgressState, int>(
-            selector: (state) => state.map(
-              inactive: (value) => 0,
-              playing: (value) => value.secondUserOverallScore,
-            ),
-            builder: (context, state) => OverallScoreCounter(
-              score: state.toString(),
-            ),
-          ),
-        ],
-      );
-}
-
-class _CurrentScores extends StatelessWidget {
-  const _CurrentScores();
-
-  @override
-  Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          BlocSelector<GameProgressCubit, GameProgressState, String>(
-            selector: (state) => state.map(
-              inactive: (value) => '0',
-              playing: (value) => value.firstUserCurrentScore,
-            ),
-            builder: (context, state) => CurrentScoreCounter(
-              score: state,
-            ),
-          ),
-          BlocSelector<GameProgressCubit, GameProgressState, String>(
-            selector: (state) => state.map(
-              inactive: (value) => '0',
-              playing: (value) => value.secondUserCurrentScore,
-            ),
-            builder: (context, state) => CurrentScoreCounter(
-              score: state,
-            ),
-          ),
-        ],
-      );
-}
-
-class _BallButtons extends StatelessWidget {
-  const _BallButtons();
-
-  @override
-  Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          BallButton(onTap: () => context.read<GameProgressCubit>().makeFirstUserTurn()),
-          BallButton(onTap: () => context.read<GameProgressCubit>().makeSecondUserTurn()),
-        ],
-      );
-}
-
-class _UsernameInputs extends StatelessWidget {
-  const _UsernameInputs();
-
-  @override
-  Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: BlocSelector<UsernameInputCubit, UsernameForm, Username>(
-              selector: (state) => state.firstUserName,
-              builder: (context, state) => UsernameInput(
-                updateName: (text) => context.read<UsernameInputCubit>().updateFirstUserName(text),
-                pure: state.pure,
-                error: state.error,
-              ),
-            ),
-          ),
-          const Gap(16),
-          Expanded(
-            child: BlocSelector<UsernameInputCubit, UsernameForm, Username>(
-              selector: (state) => state.secondUserName,
-              builder: (context, state) => UsernameInput(
-                updateName: (text) => context.read<UsernameInputCubit>().updateSecondUserName(text),
-                pure: state.pure,
-                error: state.error,
-              ),
-            ),
-          ),
-        ],
-      );
-}
-
-class _UsernameTexts extends StatelessWidget {
-  const _UsernameTexts();
-
-  @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(
-            child: BlocSelector<GameProgressCubit, GameProgressState, String>(
+            BlocSelector<GameProgressCubit, GameProgressState, int>(
               selector: (state) => state.map(
-                inactive: (value) => '',
-                playing: (value) => value.firstUserName,
+                inactive: (value) => 0,
+                playing: overallScoreSelector,
               ),
-              builder: (context, state) => UsernameText(name: state),
-            ),
-          ),
-          const Gap(16),
-          Expanded(
-            child: BlocSelector<GameProgressCubit, GameProgressState, String>(
-              selector: (state) => state.map(
-                inactive: (value) => '',
-                playing: (value) => value.secondUserName,
+              builder: (context, state) => OverallScoreCounter(
+                score: state.toString(),
               ),
-              builder: (context, state) => UsernameText(name: state),
             ),
-          ),
-        ],
+            Positioned(
+              top: 156,
+              child: BlocSelector<GameProgressCubit, GameProgressState, String>(
+                selector: (state) => state.map(
+                  inactive: (value) => '0',
+                  playing: currentScoreSelector,
+                ),
+                builder: (context, state) => CurrentScoreCounter(
+                  score: state,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 182,
+              child: BallButton(onTap: onBallTap),
+            ),
+          ],
+        ),
+      );
+}
+
+class _UsernameInteraction extends StatelessWidget {
+  final bool isEditable;
+  final Username Function(UsernameForm state) inputStateSelector;
+  final void Function(String text) updateName;
+  final String Function(GamePlaying value) textStateSelector;
+
+  const _UsernameInteraction({
+    required this.isEditable,
+    required this.inputStateSelector,
+    required this.updateName,
+    required this.textStateSelector,
+  });
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.topCenter,
+        child: !isEditable
+            ? BlocSelector<UsernameInputCubit, UsernameForm, Username>(
+                selector: inputStateSelector,
+                builder: (context, state) => UsernameInput(
+                  updateName: updateName,
+                  pure: state.pure,
+                  error: state.error,
+                ),
+              )
+            : BlocSelector<GameProgressCubit, GameProgressState, String>(
+                selector: (state) => state.map(
+                  inactive: (value) => '',
+                  playing: textStateSelector,
+                ),
+                builder: (context, state) => UsernameText(name: state),
+              ),
       );
 }

@@ -101,7 +101,7 @@ class GameProgressCubit extends Cubit<GameProgressState> {
 
   void reset() => emit(const GameProgressState.inactive());
 
-  Future<void> _checkGameResult(_Playing nextState) async {
+  Future<void> _checkGameResult(GamePlaying nextState) async {
     String? winner;
 
     if (nextState.firstUserOverallScore >= 6 &&
@@ -122,7 +122,7 @@ class GameProgressCubit extends Cubit<GameProgressState> {
 
 @freezed
 class GameProgressState with _$GameProgressState {
-  const factory GameProgressState.inactive() = _Inactive;
+  const factory GameProgressState.inactive() = GameInactive;
 
   const factory GameProgressState.playing({
     required String firstUserName,
@@ -131,7 +131,7 @@ class GameProgressState with _$GameProgressState {
     @Default(0) int secondUserOverallScore,
     @Default('0') String firstUserCurrentScore,
     @Default('0') String secondUserCurrentScore,
-  }) = _Playing;
+  }) = GamePlaying;
 }
 
 extension on String {
